@@ -1,0 +1,10 @@
+'use strict';
+(function(root){
+ const events=[{id:'duesseldorf',name:'Marathon de Düsseldorf',date:'2027-04-18',distance:42.195,goal:'Terminer'},{id:'whw',name:'West Highland Way',date:null,days:6,goal:'6 jours · été 2027'},{id:'skye',name:'Skye Trail',date:null,days:6,goal:'6 jours · été 2027'},{id:'cologne',name:'Marathon de Cologne',date:'2027-10-03',distance:42.195,goal:'3 octobre 2027 · date du plan, à confirmer auprès de l’organisateur'}];
+ const msDay=86400000;
+ function validDate(s){if(!/^\d{4}-\d{2}-\d{2}$/.test(s||''))return false;const d=new Date(s+'T12:00:00Z');return !isNaN(d)&&d.toISOString().slice(0,10)===s}
+ function daysUntil(date,today){if(!validDate(date)||!validDate(today))return null;return Math.round((Date.parse(date+'T12:00:00Z')-Date.parse(today+'T12:00:00Z'))/msDay)}
+ function racePace(minutes,distanceKm=42.195){if(!Number.isFinite(minutes)||minutes<=0||!Number.isFinite(distanceKm)||distanceKm<=0)return null;const seconds=Math.round(minutes*60/distanceKm);return {minutes:Math.floor(seconds/60),seconds:seconds%60,totalSeconds:seconds}}
+ function readiness(sessions,today){if(!validDate(today))throw Error('Date invalide');const eligible=(sessions||[]).filter(s=>validDate(s.date)&&s.date<=today&&s.status==='Réalisé'&&!s.rest);const runs=eligible.filter(s=>/course|running|footing|endurance|fractionn|sortie longue|marathon/i.test(s.title||''));const past28=runs.filter(s=>daysUntil(s.date,today)<=27);const distances=past28.map(s=>Number(String(s.km??'').replace(',','.'))).filter(n=>Number.isFinite(n)&&n>=0);return {runs28:past28.length,knownDistances:distances.length,km28:Math.round(distances.reduce((a,b)=>a+b,0)*10)/10,longest28:distances.length?Math.max(...distances):null,limited:distances.length!==past28.length,disclaimer:'Indicateurs descriptifs uniquement : aucune prédiction de résultat ni validation médicale.'}}
+ root.MagnumEvents={events,validDate,daysUntil,racePace,readiness};if(typeof module!=='undefined'&&module.exports)module.exports=root.MagnumEvents;
+})(typeof globalThis!=='undefined'?globalThis:this);

@@ -1,0 +1,8 @@
+'use strict';
+(function(root){
+function day(s){return /^\d{4}-\d{2}-\d{2}$/.test(String(s||''))?Date.parse(s+'T12:00:00Z'):NaN}
+function numeric(v){if(v===null||v===undefined||String(v).trim()==='')return null;const n=Number(String(v).replace(',','.'));return Number.isFinite(n)?n:null}
+function rolling(sessions,today,windowDays=28){const now=day(today);if(!Number.isFinite(now))throw Error('Date de référence invalide');const rows=[];for(const s of sessions){const d=day(s.date);if(!Number.isFinite(d)||d>now||d<now-(windowDays-1)*86400000||s.rest||s.status!=='Réalisé')continue;const km=numeric(s.km),mins=numeric(s.minutes),rpe=numeric(s.rpe);rows.push({date:s.date,km,load:mins===null||rpe===null?null:mins*rpe,pain:numeric(s.pain)})}const loads=rows.filter(r=>r.load!==null);return {sessions:rows.length,knownDistance:rows.filter(r=>r.km!==null).length,km:rows.reduce((sum,r)=>sum+(r.km||0),0),knownLoads:loads.length,load:loads.reduce((sum,r)=>sum+r.load,0),missingLoads:rows.length-loads.length,maxPain:rows.reduce((max,r)=>r.pain===null?max:Math.max(max,r.pain),0)}}
+function compare(sessions,today){const now=day(today);const current=rolling(sessions,today,7);const previous=rolling(sessions,new Date(now-7*86400000).toISOString().slice(0,10),7);let change=null;if(current.sessions&&previous.sessions&&current.missingLoads===0&&previous.missingLoads===0&&previous.load>0)change=Math.round((current.load/previous.load-1)*100);return {current,previous,change}}
+root.MagnumProgression={rolling,compare};if(typeof module!=='undefined'&&module.exports)module.exports=root.MagnumProgression;
+})(typeof globalThis!=='undefined'?globalThis:this);
